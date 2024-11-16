@@ -1,5 +1,7 @@
 import rospy
 import cv2
+import math
+import random
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -40,7 +42,7 @@ class Kamera:
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                if label == "car" or label == "cars":  # Hedef nesne algılandı mı?
+                if label == "boat" or label == "chair" or label == "uav":  # Hedef nesne algılandı mı?
                     self.target = True
                     break
             # cv2.imshow("PR2 Kamera Görüntüsü", frame)
@@ -88,22 +90,54 @@ class LidarHareket:
         twist.linear.x = speed
         self.pub.publish(twist)
 
-    def saga_git(self, duration=1.0, speed=3.0):
+    def saga_git(self, turn_angle=90, speed=3.0):
         """Robotun sağa hareketini sağlar."""
         twist = Twist()
-        twist.angular.z = -speed
-        self.pub.publish(twist)
-        rospy.sleep(duration)
-        twist.angular.z = 0.0  # Hareketi durdur
+        rate = rospy.Rate(10)  # 10 Hz
+        angular_speed = speed  # Açısal hız (rad/s)
+
+        # Dereceyi radyana çevir
+        angular_distance = math.radians(turn_angle)
+
+        # Hareket süresini hesapla
+        duration = angular_distance / abs(angular_speed)
+        end_time = rospy.Time.now() + rospy.Duration(duration)
+
+        # Sağa dönüş hareketi
+        twist.linear.x = 0.0
+        twist.angular.z = -angular_speed  # Negatif z ekseni: saat yönünde dönüş
+
+        while rospy.Time.now() < end_time:
+            self.pub.publish(twist)
+            rate.sleep()
+
+        # Dönüşü durdur
+        twist.angular.z = 0.0
         self.pub.publish(twist)
 
-    def sola_git(self, duration=1.0, speed=3.0):
+    def sola_git(self, turn_angle=90, speed=1.0):
         """Robotun sola hareketini sağlar."""
         twist = Twist()
-        twist.angular.z = speed
-        self.pub.publish(twist)
-        rospy.sleep(duration)
-        twist.angular.z = 0.0  # Hareketi durdur
+        rate = rospy.Rate(10)  # 10 Hz
+        angular_speed = speed  # Açısal hız (rad/s)
+
+        # Dereceyi radyana çevir
+        angular_distance = math.radians(turn_angle)
+
+        # Hareket süresini hesapla
+        duration = angular_distance / abs(angular_speed)
+        end_time = rospy.Time.now() + rospy.Duration(duration)
+
+        # Sola dönüş hareketi
+        twist.linear.x = 0.0
+        twist.angular.z = angular_speed  # Pozitif z ekseni: saat yönünün tersinde dönüş
+
+        while rospy.Time.now() < end_time:
+            self.pub.publish(twist)
+            rate.sleep()
+
+        # Dönüşü durdur
+        twist.angular.z = 0.0
         self.pub.publish(twist)
 
     def dur(self):
@@ -169,11 +203,13 @@ class LidarHareket:
                     print(forward_distance)
                     self.ileri_git(speed=5.0)  # Daha yavaş yaklaş
             else:
-                if forward_distance < 1.0:  # Çok yakında bir engel varsa
-                    rospy.loginfo("Engel algılandı! Sağa veya sola geçiliyor.")
+                if forward_distance < 1.5:  # Çok yakında bir engel varsa
+                    rospy.loginfo("Engel algılandı! Sağa geçiliyor.")
                     self.dur()
                     rospy.sleep(1)
-                    self.saga_git()  # Sağdan geçmeyi dene
+                    rospy.loginfo("Sağa geçiliyor.")
+                    self.saga_git(turn_angle=90, speed=7.5)
+                    self.ileri_git(speed=10.0)
                 else:
                     rospy.loginfo("Güvenli mesafe, ileri gidiliyor.")
                     self.ileri_git(speed=10.0)
