@@ -177,39 +177,19 @@ class LidarHareket:
 
         rospy.sleep(2)  
 
-    def kollar_baslangic_pozisyonu(self):
-        """Robot başlangıç konumuna dönsün ve kollarını kontrol etsin."""
-        rospy.loginfo("Başlangıç pozisyonuna dönülüyor...")
+    # def geri_git(self, speed=3.0, duration=5):
+    #     """Robotun geri hareket etmesini sağlar."""
+    #     twist = Twist()
+    #     twist.linear.x = -speed  
+    #     rate = rospy.Rate(10)  
 
-        self.geri_git(speed=3.0, duration=5)  
+    #     end_time = rospy.Time.now() + rospy.Duration(duration)
+    #     while rospy.Time.now() < end_time:
+    #         self.pub.publish(twist)
+    #         rate.sleep()
 
-        rospy.loginfo("Kollar yukarı kaldırılıyor...")
-        self.kollar_asagi_yukari(asagi=False)
-
-        rospy.sleep(1)
-        rospy.loginfo("Kollar aşağı indiriliyor...")
-        self.kollar_asagi_yukari(asagi=True)
-
-        rospy.sleep(1)
-        rospy.loginfo("Kollar tekrar yukarı kaldırılıyor...")
-        self.kollar_asagi_yukari(asagi=False)
-
-
-    def geri_git(self, speed=3.0, duration=5):
-        """Robotun geri hareket etmesini sağlar."""
-        twist = Twist()
-        twist.linear.x = -speed  
-        rate = rospy.Rate(10)  
-
-        end_time = rospy.Time.now() + rospy.Duration(duration)
-        while rospy.Time.now() < end_time:
-            self.pub.publish(twist)
-            rate.sleep()
-
-        twist.linear.x = 0.0
-        self.pub.publish(twist)
-
-
+    #     twist.linear.x = 0.0
+    #     self.pub.publish(twist)
 
     def hareket_kontrol(self):
         """Robotun lidar ve kamera verilerine göre hareketini kontrol eder."""
@@ -225,8 +205,6 @@ class LidarHareket:
                     print(forward_distance)
                     self.dur()
                     self.kollar_asagi_yukari(asagi=False)  
-                    
-                    self.kollar_baslangic_pozisyonu()
                 elif forward_distance <= 1.0 and not self.flag_kollar_indirildi:
                     print(forward_distance)
                     self.kollar_asagi_yukari(asagi=True)
