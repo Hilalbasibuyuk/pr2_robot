@@ -1,6 +1,11 @@
 Bu Pr2 modelinin gazebo ortamında bir nesneyi tanıyarak o nesneye yönelen ardından nesneyi alarak başlangıç konumuna götürerek bırakan bir robot simülasyonu kodudur.
 
 
+![PR2 Robot Modeli](https://github.com/Hilalbasibuyuk/pr2_robot/blob/master/Pr2_robot_model.png)
+
+
+
+
 **Kendi ortamınızı kurarak robot reposunu bu ortama clone etmeniz gerekmektedir**
 
 
@@ -62,3 +67,7 @@ Bu Pr2 modelinin gazebo ortamında bir nesneyi tanıyarak o nesneye yönelen ard
 
 
 ````python main.py````
+
+
+
+
