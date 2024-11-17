@@ -61,6 +61,7 @@ class LidarHareket:
         self.kamera = kamera
 
         self.flag_kollar_indirildi = False
+        self.hareket_durdur = False
 
         # Robot hareketini kontrol etmek için Publisher
         self.pub = rospy.Publisher('/base_controller/command', Twist, queue_size=10)
@@ -88,6 +89,14 @@ class LidarHareket:
         """Robotun ileri hareketini başlatır."""
         twist = Twist()
         twist.linear.x = speed
+        self.pub.publish(twist)
+
+    def ileri_sureye_gore_git(self, speed=5.0, duration=1.0):
+        twist = Twist()
+        twist.linear.x = speed
+        self.pub.publish(twist)
+        rospy.sleep(duration)  # Süre boyunca ileri git
+        twist.linear.x = 0.0  # Hareketi durdur
         self.pub.publish(twist)
 
     def saga_git(self, turn_angle=90, speed=3.0):
@@ -175,7 +184,7 @@ class LidarHareket:
         self.pub_left_arm.publish(left_trajectory)
         self.pub_right_arm.publish(right_trajectory)
 
-        rospy.sleep(2)  # Hareketin bitmesini bekle
+        rospy.sleep(2)  
 
     def hareket_kontrol(self):
         """Robotun lidar ve kamera verilerine göre hareketini kontrol eder."""
@@ -183,38 +192,45 @@ class LidarHareket:
         while not rospy.is_shutdown():
             forward_distance = self.lidar_verisi()
             if forward_distance is None:
+                rospy.logwarn("Lidar verisi alınamadı, bekleniyor...")
                 continue
 
-            if self.kamera.target:  # Hedef algılandıysa
+            if self.kamera.target:
                 rospy.loginfo("Hedef algılandı! Nesneye yaklaşılıyor.")
                 if forward_distance < 0.35:
-                    print(forward_distance)
+                    rospy.loginfo("Hedefe ulaşıldı, hareket durduruluyor.")
                     self.dur()
-                    self.kollar_asagi_yukari(asagi = False)
+                    self.kollar_asagi_yukari(asagi=False)
+                    break
                 elif forward_distance <= 1.0 and not self.flag_kollar_indirildi:
-                    print(forward_distance)
-                    self.kollar_asagi_yukari(asagi = True)
-                    self.flag_kollar_indirildi = True  # Kolların indirildiğini işaretle
-                    self.ileri_git(speed=5.0)
-                elif forward_distance <= 1.0 and self.flag_kollar_indirildi:
-                    print(forward_distance)
-                    self.ileri_git(speed=5.0)
-                elif forward_distance > 1.0:
-                    print(forward_distance)
-                    self.ileri_git(speed=5.0)  # Daha yavaş yaklaş
+                    self.kollar_asagi_yukari(asagi=True)
+                    self.flag_kollar_indirildi = True
+                self.ileri_git(speed=5.0)
             else:
-                if forward_distance < 1.5:  # Çok yakında bir engel varsa
+                if forward_distance < 1.5:
                     rospy.loginfo("Engel algılandı! Sağa geçiliyor.")
                     self.dur()
                     rospy.sleep(1)
-                    rospy.loginfo("Sağa geçiliyor.")
                     self.saga_git(turn_angle=90, speed=7.5)
                     self.ileri_git(speed=10.0)
                 else:
                     rospy.loginfo("Güvenli mesafe, ileri gidiliyor.")
                     self.ileri_git(speed=10.0)
 
+            if not self.hareket_durdur:
+                self.sola_git(turn_angle=90, speed=7.5)
+                self.ileri_sureye_gore_git(speed=5.0, duration=3.5)
+                self.hareket_durdur = True
+                self.flag_kollar_indirildi = False
+            elif self.hareket_durdur and not self.flag_kollar_indirildi:
+                self.kollar_asagi_yukari(asagi=True)
+                self.flag_kollar_indirildi = True
+                rospy.loginfo("Görev tamamlandı.")
+                break
+
             rate.sleep()
+
+        rospy.loginfo("Görev tamamlandı. Robot uyku moduna geçiyor. Görüşmek üzere!")
 
 if __name__ == "__main__":
     try:
