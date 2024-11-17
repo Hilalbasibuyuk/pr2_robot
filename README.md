@@ -21,3 +21,26 @@ git clone https://github.com/PR2/pr2_common.git
 
 cd ~/catkin_ws
 rosdep install --from-paths src --ignore-src -r -y
+
+
+**Terminal'de aşağıdaki komutu yazarak dünyayı başlatabilirsiniz**
+
+
+roslaunch pr2_gazebo pr2_empty_world.launch
+
+
+**Teleop Kontrolü: PR2 robotunu klavye ile kontrol etmek için:**
+
+
+roslaunch pr2_teleop teleop_keyboard.launch
+
+**Joystick kontrolü: Pr2 robotunu joysticklerle hareket ettirmek için**
+
+roslaunch pr2_teleop teleop_joystick.launch
+
+
+**Ana kameranın çıktısını görmek için rqt_image_view aracını çalıştırın** 
+
+
+rosrun rqt_image_view rqt_image_view
+
